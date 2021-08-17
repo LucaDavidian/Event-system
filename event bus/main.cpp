@@ -20,7 +20,7 @@ class Player
 public:
     Player() : mHealth(100), mConnection(eventDispatcher.SubscribeToEvent<HitEvent>(*this, &Player::IsHit)), mConnection2(eventDispatcher.SubscribeToEvent<BonusEvent>(*this, &Player::GetBonus)) {}
 
-    ~Player() { eventDispatcher.UnfollowEvent(mConnection); }
+    ~Player() { eventDispatcher.UnsubscribeFromEvent(mConnection); }
 
     void IsHit(HitEvent &event) { std::cout << event.mMessage << std::endl; mHealth -= event.mDamage; }
     void GetBonus(BonusEvent &event) { mHealth += event.mBonus; }

@@ -35,7 +35,6 @@ private:
     class EventHandler : public EventHandlerBase
     {
         friend class EventBus;
-
     public:
         template <typename... Args>
         void TriggerEvent(Args&&... args)
@@ -72,7 +71,7 @@ private:
             for (auto &event : mEventQueue)
                 mSignal(event);
 
-            mEventQueue.clear();
+            ClearEventQueue();
         }
 
         void ClearEventQueue()
@@ -98,15 +97,14 @@ public:
     template <typename Event>
     void EnqueueEvent(Event &&event);
     
+    template <typename... Event>
     void DispatchQueuedEvents() const;
 
-    template <typename Event>
     void DispatchQueuedEvents() const;
 
-    template <typename... Event, typename = std::enable_if_t<sizeof...(Event) != 0U>>
+    template <typename... Event>
     void ClearEventQueues();
 
-    template <typename... Event, typename = std::enable_if_t<sizeof...(Event) == 0U>, typename = void>
     void ClearEventQueues();
 
     // C++17 constexpr-if implementation
@@ -139,7 +137,7 @@ public:
         return GetEventHandler<Event>().mSignal.Bind(std::forward<T>(funObj));
     }
 
-    void UnfollowEvent(Connection connection)
+    void UnsubscribeFromEvent(Connection connection)
     {
         connection.Disconnect();
     }
@@ -170,7 +168,7 @@ void EventBus::TriggerEvent(Args&&... args)
 template <typename Event>
 void EventBus::TriggerEvent(Event &&event)
 {
-    GetEventHandler<typename std::decay<Event>::type>().TriggerEvent(std::forward<Event>(event));
+    GetEventHandler<typename std::remove_reference<Event>::type>().TriggerEvent(std::forward<Event>(event));
 }
 
 template <typename Event, typename... Args>
@@ -182,7 +180,13 @@ void EventBus::EnqueueEvent(Args&&... args)
 template <typename Event>
 void EventBus::EnqueueEvent(Event &&event)
 {
-    GetEventHandler<typename std::decay<Event>::type>().EnqueueEvent(std::forward<Event>(event));
+    GetEventHandler<typename std::remove_reference<Event>::type>().EnqueueEvent(std::forward<Event>(event));
+}
+
+template <typename... Event>
+void EventBus::DispatchQueuedEvents() const
+{
+    (GetEventHandler<Event>().DispatchEvents(), ...);
 }
 
 void EventBus::DispatchQueuedEvents() const
@@ -192,24 +196,17 @@ void EventBus::DispatchQueuedEvents() const
             eventHandler->DispatchQueuedEvents();
 }
 
-template <typename Event>
-void EventBus::DispatchQueuedEvents() const
-{
-    GetEventHandler<Event>().DispatchEvents();
-}
-
-template <typename... Events, typename>
+template <typename... Events>
 void EventBus::ClearEventQueues()
 {
     (GetEventHandler<Events>().ClearEventQueue(), ...);
 }
 
-template <typename... Event, typename, typename>
 void EventBus::ClearEventQueues()
 {
-    for (std::size_t i = 0; i < mEventHandlers.size(); i++)
-        if (mEventHandlers[i])
-            mEventHandlers[i]->ClearEventQueue();
+    for (auto eventHandler : mEventHandlers)
+        if (eventHandler)
+            eventHandler->ClearEventQueue(); 
 }
 
 #endif  // EVENT_BUS_H
