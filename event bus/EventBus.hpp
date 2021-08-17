@@ -119,16 +119,22 @@ public:
     //                 mEventHandlers[i]->ClearEvents();
     // }
 
-    template <typename Event, typename T>
-    Connection SubscribeToEvent(T &instance, void (T::*ptrToMemFun)(Event&))
+    // template <typename Event, typename T>
+    // Connection SubscribeToEvent(T &instance, void (T::*ptrToMemFun)(Event&))
+    // {
+    //     return GetEventHandler<Event>().mSignal.Bind(instance, ptrToMemFun);
+    // }
+
+    // template <typename Event, typename T>
+    // Connection SubscribeToEvent(T &instance, void (T::*ptrToConstMemFun)(Event&) const)
+    // {
+    //     return GetEventHandler<Event>().mSignal.Bind(instance, ptrToConstMemFun);
+    // }
+
+    template <typename Event, typename T, typename PtrToMemFun>
+    Connection SubscribeToEvent(T &instance, PtrToMemFun ptrToMemFun)
     {
         return GetEventHandler<Event>().mSignal.Bind(instance, ptrToMemFun);
-    }
-
-    template <typename Event, typename T>
-    Connection SubscribeToEvent(T &instance, void (T::*ptrToConstMemFun)(Event&) const)
-    {
-        return GetEventHandler<Event>().mSignal.Bind(instance, ptrToConstMemFun);
     }
 
     template <typename Event, typename T>
