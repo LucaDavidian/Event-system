@@ -195,7 +195,7 @@ void EventBus::DispatchQueuedEvents() const
     (GetEventHandler<Event>().DispatchEvents(), ...);
 }
 
-void EventBus::DispatchQueuedEvents() const
+inline void EventBus::DispatchQueuedEvents() const
 {
     for (EventHandlerBase *eventHandler : mEventHandlers)
         if (eventHandler)
@@ -208,7 +208,7 @@ void EventBus::ClearEventQueues()
     (GetEventHandler<Events>().ClearEventQueue(), ...);
 }
 
-void EventBus::ClearEventQueues()
+inline void EventBus::ClearEventQueues()
 {
     for (auto eventHandler : mEventHandlers)
         if (eventHandler)
