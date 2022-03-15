@@ -171,7 +171,10 @@ EventBus::EventPool<Event> &EventBus::GetEventHandler()
     const auto eventHandlerIndex = GetEventId<Event>();
 
     if (eventHandlerIndex >= mEventHandlers.size())
-        mEventHandlers.push_back(new EventPool<Event>);
+        mEventHandlers.resize(eventHandlerIndex + 1);
+
+	if (!mEventHandlers[eventHandlerIndex])
+		mEventHandlers[eventHandlerIndex] = new EventHandler<Event>;
 
     return static_cast<EventPool<Event>&>(*mEventHandlers[eventHandlerIndex]);
 }
