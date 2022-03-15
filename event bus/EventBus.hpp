@@ -23,16 +23,16 @@ int GetEventId()
 class EventBus
 {
 private:
-    struct EventHandlerBase
+    struct EventPoolBase
     {
-        virtual ~EventHandlerBase() = default;
+        virtual ~EventPoolBase() = default;
 
         virtual void DispatchQueuedEvents() = 0;
         virtual void ClearEventQueue() = 0;
     };
 
     template <typename Event>
-    class EventHandler : public EventHandlerBase
+    class EventPool : public EventPoolBase
     {
         friend class EventBus;
     public:
@@ -131,15 +131,26 @@ public:
     //     return GetEventHandler<Event>().mSignal.Bind(instance, ptrToConstMemFun);
     // }
 
+    // note: by using a template type parameter as a pointer to member function
+    // 1. there's no need for two separate Bind member functions (one for const member functions 
+    //    and one for non-const member functions) and 
+    // 2. the Bind function can accept member functions whose signature doesn't match 
+    //    exactly that of the delegate (the delegate musr accept parameters that can be converted to
+    //    those in the bound function signature and the bound function return type must be convertible 
+    //    to that in the delegate's signature)
     template <typename Event, typename T, typename PtrToMemFun>
     Connection SubscribeToEvent(T &instance, PtrToMemFun ptrToMemFun)
     {
+        static_assert(std::is_member_function_pointer<PtrToMemFun>::value);
+
         return GetEventHandler<Event>().mSignal.Bind(instance, ptrToMemFun);
     }
 
     template <typename Event, typename T>
     Connection SubscribeToEvent(T &&funObj)
     {
+        static_assert(std::is_invocable<T, Event>::value);
+
         return GetEventHandler<Event>().mSignal.Bind(std::forward<T>(funObj));
     }
 
@@ -149,20 +160,20 @@ public:
     }
 private:
     template <typename Event>
-    EventHandler<Event> &GetEventHandler(); 
+    EventPool<Event> &GetEventHandler(); 
 
-    std::vector<EventHandlerBase*> mEventHandlers;
+    std::vector<EventPoolBase*> mEventHandlers;
 };
 
 template <typename Event>
-EventBus::EventHandler<Event> &EventBus::GetEventHandler()
+EventBus::EventPool<Event> &EventBus::GetEventHandler()
 {
     const auto eventHandlerIndex = GetEventId<Event>();
 
     if (eventHandlerIndex >= mEventHandlers.size())
-        mEventHandlers.push_back(new EventHandler<Event>);
+        mEventHandlers.push_back(new EventPool<Event>);
 
-    return static_cast<EventHandler<Event>&>(*mEventHandlers[eventHandlerIndex]);
+    return static_cast<EventPool<Event>&>(*mEventHandlers[eventHandlerIndex]);
 }
 
 template <typename Event, typename... Args>
@@ -197,7 +208,7 @@ void EventBus::DispatchQueuedEvents() const
 
 inline void EventBus::DispatchQueuedEvents() const
 {
-    for (EventHandlerBase *eventHandler : mEventHandlers)
+    for (EventPoolBase *eventHandler : mEventHandlers)
         if (eventHandler)
             eventHandler->DispatchQueuedEvents();
 }
