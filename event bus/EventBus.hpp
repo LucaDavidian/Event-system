@@ -162,7 +162,7 @@ private:
     template <typename Event>
     EventPool<Event> &GetEventHandler(); 
 
-    std::vector<EventPoolBase*> mEventHandlers;
+    std::vector<EventPoolBase*> mEventPools;
 };
 
 template <typename Event>
@@ -170,13 +170,13 @@ EventBus::EventPool<Event> &EventBus::GetEventHandler()
 {
     const auto eventHandlerIndex = GetEventId<Event>();
 
-    if (eventHandlerIndex >= mEventHandlers.size())
-        mEventHandlers.resize(eventHandlerIndex + 1);
+    if (eventHandlerIndex >= mEventPools.size())
+        mEventPools.resize(eventHandlerIndex + 1);
 
-	if (!mEventHandlers[eventHandlerIndex])
-		mEventHandlers[eventHandlerIndex] = new EventHandler<Event>;
+	if (!mEventPools[eventHandlerIndex])
+		mEventPools[eventHandlerIndex] = new EventPool<Event>;
 
-    return static_cast<EventPool<Event>&>(*mEventHandlers[eventHandlerIndex]);
+    return static_cast<EventPool<Event>&>(*mEventPools[eventHandlerIndex]);
 }
 
 template <typename Event, typename... Args>
@@ -211,7 +211,7 @@ void EventBus::DispatchQueuedEvents() const
 
 inline void EventBus::DispatchQueuedEvents() const
 {
-    for (EventPoolBase *eventHandler : mEventHandlers)
+    for (EventPoolBase *eventHandler : mEventPools)
         if (eventHandler)
             eventHandler->DispatchQueuedEvents();
 }
@@ -224,7 +224,7 @@ void EventBus::ClearEventQueues()
 
 inline void EventBus::ClearEventQueues()
 {
-    for (auto eventHandler : mEventHandlers)
+    for (auto eventHandler : mEventPools)
         if (eventHandler)
             eventHandler->ClearEventQueue(); 
 }
