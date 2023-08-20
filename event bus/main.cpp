@@ -22,8 +22,8 @@ public:
 
     ~Player() { eventDispatcher.UnsubscribeFromEvent(mConnection); }
 
-    void IsHit(HitEvent &event) { std::cout << event.mMessage << std::endl; mHealth -= event.mDamage; }
-    void GetBonus(BonusEvent &event) { mHealth += event.mBonus; }
+    void IsHit(HitEvent event) { std::cout << event.mMessage << std::endl; mHealth -= event.mDamage; }
+    void GetBonus(BonusEvent event) { mHealth += event.mBonus; }
 
     int GetHealth() const { return mHealth; }
 private:

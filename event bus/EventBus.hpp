@@ -8,7 +8,6 @@
 inline int GetUniqueEventId()
 {
     static int id = 0;
-
     return id++;
 }
 
@@ -16,7 +15,6 @@ template <typename Event>
 int GetEventId()
 {
     static int eventID = GetUniqueEventId();
-
     return eventID;
 }
 
@@ -47,7 +45,7 @@ private:
         template <typename... Args, typename U = Event, typename = typename std::enable_if<std::is_aggregate<U>::value>::type>
         void EnqueueEvent(Args&&... args) 
         {
-            mEventQueue.push_back(Event{std::forward<Args>(args)...});
+            mEventQueue.push_back({std::forward<Args>(args)...});
         }
 
         template <typename... Args, typename U = Event, typename = typename std::enable_if<!std::is_aggregate<U>::value>::type, typename = void>
@@ -61,7 +59,7 @@ private:
         // void EnqueueEvent(Args&&... args) 
         // {
         //     if constexpr (std::is_aggregate_v<Event>)
-        //         mEvents.push_back(Event{std::forward<Args>(args)...}); 
+        //         mEvents.push_back({std::forward<Args>(args)...}); 
         //     else
         //         mEvents.emplace_back(std::forward<Args>(args)...); 
         // }
@@ -80,9 +78,9 @@ private:
         }
 
     private:
-        Signal<void(Event&)> mSignal;
+        Signal<void(Event)> mSignal;
         std::vector<Event> mEventQueue;
-    };
+    };  // EventPool
 
 public:
     template <typename Event, typename... Args>
@@ -102,9 +100,9 @@ public:
 
     void DispatchQueuedEvents() const;
 
-    template <typename... Event>
     void ClearEventQueues();
 
+    template <typename... Event>
     void ClearEventQueues();
 
     // C++17 constexpr-if implementation
@@ -135,7 +133,7 @@ public:
     // 1. there's no need for two separate Bind member functions (one for const member functions 
     //    and one for non-const member functions) and 
     // 2. the Bind function can accept member functions whose signature doesn't match 
-    //    exactly that of the delegate (the delegate musr accept parameters that can be converted to
+    //    exactly that of the delegate (the delegate must accept parameters that can be converted to
     //    those in the bound function signature and the bound function return type must be convertible 
     //    to that in the delegate's signature)
     template <typename Event, typename T, typename PtrToMemFun>
